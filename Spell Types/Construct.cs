@@ -1,33 +1,73 @@
 ﻿using UnityEngine;
 
+//Spells that create an object in the world
 public class Construct : ISpellType
 {
+    //Element type of the spell, defines certain behaviours of the spell e.g. fire spells will cause damage, earth spells will be more resistant
     Element.ElementType element = Element.ElementType.None;
+
+    //Type of object to be spawned by the spell
     GameObject construct = null;
+
+    //Reference to created construct, made global so that it can be accessed by all functions in the class
+    GameObject newConstruct = null;
+
+    //Spawn position for the construct in world space
     Vector3 spawnPosition = Vector3.zero;
+
+    //Rotation of the object, allows the object to be spawned on different surfaces, will later be used to make object spawn relative to the direction the player is looking
     Quaternion spawnRotation = Quaternion.identity;
+
+    //Size and lifespan (where relevent) of the construct
     float size = 1f, lifeSpan = 10f;
 
+    //Reference to targetting pointer, all construct spells must be targetted in the world
     TargettingPointer targetpointer;
 
+    //Create a new gameobject of the requested shape in the world, set its size and material and any elemental specific parameters/components
     public void Cast()
     {
-        //Create construct
-        GameObject newConstruct = GameObject.Instantiate(construct, spawnPosition, spawnRotation);
-        //Set size
+        //Construct specific code
+        newConstruct = GameObject.Instantiate(construct, spawnPosition, spawnRotation);
         Transform constructTransform = newConstruct.transform;
         constructTransform.localScale = new Vector3(size, size, size);
-        //Set material
         Renderer constructRenderer = newConstruct.GetComponent<Renderer>();
         Material elementMaterial = Element.GetElementMaterial(element);
         constructRenderer.material = elementMaterial;
-        //Set lifespan
-        TimedDestroy TD = newConstruct.AddComponent<TimedDestroy>();
-        TD.SetLifeSpan(lifeSpan);
+
+        //Element specific code
+        ElementalProperties();
 
         Debug.LogFormat("Spell Type = Construct, Construct Object = {0}, Element = {1}, Spawn Position = {2}, Size = {3}, Life Span = {4}", construct.name, element, spawnPosition, size, lifeSpan);
     }
 
+    //Set properties specific to spell element type
+    public void ElementalProperties()
+    {
+        switch (element)
+        {
+            case Element.ElementType.Earth:
+                //Eart constructs will remain forever if they are not damaged, no lifespan
+                break;
+
+            case Element.ElementType.Fire:
+                //Fire can only be sustained for a certain amount of time
+                TimedDestroy TD = newConstruct.AddComponent<TimedDestroy>();
+                TD.SetLifeSpan(lifeSpan);
+                break;
+
+            case Element.ElementType.Ice:
+                //Ice constructs should melt after a set period of time, may be affected by temperature in the future
+                TD = newConstruct.AddComponent<TimedDestroy>();
+                TD.SetLifeSpan(lifeSpan);
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    //Public functions to set parameters
     public void SetDuration(float duration)
     {
         lifeSpan = duration;
@@ -58,6 +98,7 @@ public class Construct : ISpellType
         size = range;
     }
 
+    //Set up targetting pointer parameters
     public void StartTargetting(TargettingPointer targetpointer)
     {
         this.targetpointer = targetpointer;
@@ -65,6 +106,7 @@ public class Construct : ISpellType
         targetpointer.SetTargetPrefab(construct);
     }
 
+    //Function called during targetting so that targetting method is specific to the construct spell
     public bool Target()
     {
         //Debug.Log("Target");

@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
 
+//Interface that all types of spells (e.g. AOE, object creation, self-targetting etc.) must implement, allows VM to create and process spell objects of any type from a 
+//bytecode file
 public interface ISpellType
 {
     void SetElement(Element.ElementType element);
@@ -11,4 +13,5 @@ public interface ISpellType
     bool Target();
     void StartTargetting(TargettingPointer targetpointer);
     void Cast();
+    void ElementalProperties();
 }
